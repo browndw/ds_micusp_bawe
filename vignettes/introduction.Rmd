@@ -1,0 +1,461 @@
+---
+title: "R Notebook"
+output: 
+  html_document:
+    fig_caption: yes
+    number_sections: true
+    toc: true
+    toc_float: true
+author: "David Brown & Emily DeJeu"
+bibliography: mda_bib.bib
+link-citations: yes
+nocite: |
+  @*
+vignette: >
+  %\VignetteIndexEntry{introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(
+  root.dir = rprojroot::find_rstudio_root_file(),
+  collapse = TRUE,
+  comment = "#>",
+  tidy.opts=list(width.cutoff=70),
+  tidy=TRUE
+)
+```
+
+# Introduction
+
+The code 
+
+## Multi-Dimensional Analysis (MDA)
+
+This project uses an approach called Multi-Dimensional Analysis (MDA). MDA is a [complex statistical procedure](https://www.uni-bamberg.de/fileadmin/eng-ling/fs/Chapter_21/Index.html?Multidimensionalanalysis.html) developed by Douglas Biber. It is largely used to describe language as it varies by [genre, register, and use](https://www.uni-bamberg.de/fileadmin/eng-ling/fs/Chapter_21/Index.html?21Summary.html).
+
+MDA is based on the fundamental linguistic principle that some linguistic variables co-occur (nouns and adjectives, for example) while others inversely co-occur (think nouns and pronouns).
+
+MDA in conducted in the following stages:
+
+1. Identification of relevant variables
+1. Extraction of factors from variables
+1. Functional interpretation of factors as dimensions
+1. Placement of categories on the dimensions
+
+## Corpora
+
+Our study compares disclinary variation in student writing across two national contexts: American and British. The American data come from the Michigan Corpus of Upper-Level Student Papers (MICUSP), while the British come from the British Academic Written English (BAWE) corpus.
+
+# Load Packages
+
+MDA is carried out using the **mda.biber** packager. You can access the package and its code here:
+
+<https://github.com/browndw/mda.biber>
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(mda.biber)
+```
+
+# Load Utility Functions
+
+```{r}
+source("R/utils.R")
+```
+
+# Load & Prepare Data
+
+## Load Tables of DocuScope Frequencies
+
+```{r message=FALSE}
+ds_micusp <- read_csv("data/CLUSTER_micusp_body.csv", show_col_types = FALSE)
+micusp_meta <- read_csv("data/micusp_meta.csv", show_col_types = FALSE)
+```
+
+```{r}
+ds_micusp[1:10, 1:6] %>% knitr::kable(digits = 3)
+```
+
+## Load Metadata
+
+```{r message=FALSE}
+ds_bawe <- read_csv("data/CLUSTER_bawe_body.csv", show_col_types = FALSE)
+bawe_meta <- read_csv("data/bawe_meta.csv", show_col_types = FALSE)
+```
+
+## Check Composition of Corpora
+
+```{r warning=FALSE, message=FALSE}
+micusp_counts <- ds_micusp %>%
+  mutate(Filename = str_remove(Filename, ".txt$")) %>%
+  rename(text_id = Filename) %>%
+  left_join(select(micusp_meta, text_id, paper_discipline)) %>%
+  group_by(paper_discipline) %>%
+  summarize(Tokens = sum(Tokens),
+    Texts = n()
+  )
+
+```
+
+```{r echo=FALSE}
+ micusp_counts %>% janitor::adorn_totals() %>% knitr::kable("html") %>% kableExtra::row_spec(18, bold = TRUE) %>%
+  kableExtra::kable_styling()
+```
+
+
+```{r warning=FALSE, message=FALSE}
+bawe_counts <- ds_bawe %>%
+  mutate(Filename = str_remove(Filename, ".txt$")) %>%
+  rename(text_id = Filename) %>%
+  left_join(select(bawe_meta, text_id, discipline)) %>%
+  group_by(discipline) %>%
+  summarize(Tokens = sum(Tokens),
+            Texts = n()
+  )
+```
+
+```{r echo=FALSE}
+ bawe_counts %>% janitor::adorn_totals() %>% knitr::kable("html") %>% kableExtra::row_spec(32, bold = TRUE) %>%
+  kableExtra::kable_styling()
+```
+
+## Prepare Data
+
+```{r message=FALSE}
+ds_micusp <- ds_micusp %>%
+  mutate(Filename = str_remove(Filename, ".txt")) %>%
+  rename(text_id = Filename) %>%
+  left_join(select(micusp_meta, text_id, paper_discipline)) %>%
+  column_to_rownames("text_id") %>%
+  select(paper_discipline, AcademicTerms:Updates) %>%
+  mutate(paper_discipline = as.factor(paper_discipline))
+
+ds_bawe <- ds_bawe %>%
+  mutate(Filename = str_remove(Filename, ".txt")) %>%
+  rename(text_id = Filename) %>%
+  left_join(select(bawe_meta, text_id, discipline)) %>%
+  column_to_rownames("text_id") %>%
+  select(discipline, AcademicTerms:Updates) %>%
+  mutate(discipline = as.factor(discipline))
+```
+
+# Execute MDA
+
+## MICUSP MDA
+
+```{r}
+mda_micusp <- mda_loadings(ds_micusp, n_factors = 3)
+
+mda_bawe <- mda_loadings(ds_bawe, n_factors = 3)
+```
+
+### Examine MICUSP Loadings
+
+```{r}
+micusp_fl <- attributes(mda_micusp)$loadings %>% 
+  rownames_to_column("Category") %>%
+  pivot_longer(!Category, names_to = "Factor", values_to = "MICUSP Loading")
+
+bawe_fl <- attributes(mda_bawe)$loadings %>% 
+  rownames_to_column("Category") %>%
+  pivot_longer(!Category, names_to = "Factor", values_to = "BAWE Loading")
+
+fl_1 <- full_join(micusp_fl, bawe_fl, by = c("Category", "Factor")) %>%
+  filter(abs(`MICUSP Loading`) > 0.35 | abs(`BAWE Loading`) > 0.35) %>%
+  mutate(Category = str_replace_all(Category, "([a-z])([A-Z])", "\\1 \\2")) %>%
+  mutate(Factor = str_replace (Factor, "(\\d)", " \\1")) %>%
+  select(Factor, Category, `MICUSP Loading`) %>%
+  arrange(Factor, -`MICUSP Loading`)
+
+fl_2 <- full_join(micusp_fl, bawe_fl, by = c("Category", "Factor")) %>%
+  filter(abs(`MICUSP Loading`) > 0.35 | abs(`BAWE Loading`) > 0.35) %>%
+  mutate(Category = str_replace_all(Category, "([a-z])([A-Z])", "\\1 \\2")) %>%
+  mutate(Factor = str_replace (Factor, "(\\d)", " \\1")) %>%
+  select(Factor, Category, `BAWE Loading`) %>%
+  arrange(Factor, -`BAWE Loading`)
+
+micusp_orp <- which(abs(fl_1$`MICUSP Loading`) < 0.35 & fl_1$`MICUSP Loading` > 0)
+bawe_orp <- which(abs(fl_2$`BAWE Loading`) < 0.35 & fl_2$`BAWE Loading` > 0)
+
+micusp_orn <- which(abs(fl_1$`MICUSP Loading`) < 0.35 & fl_1$`MICUSP Loading` < 0)
+bawe_orn <- which(abs(fl_2$`BAWE Loading`) < 0.35 & fl_2$`BAWE Loading` < 0)
+
+micusp_neg <- which(fl_1$`MICUSP Loading` < 0 & abs(fl_1$`MICUSP Loading`) > 0.35)
+bawe_neg <- which(fl_2$`BAWE Loading` < 0 & abs(fl_2$`BAWE Loading`) > 0.35)
+```
+
+### Examine Loadings
+
+```{r echo=FALSE, warning=FALSE}
+fl_1 %>%
+  knitr::kable(digits = 2) %>%
+  kableExtra::kable_styling(full_width = F, position = "float_left") %>%
+  kableExtra::pack_rows(index = table(fl_1$Factor)) %>%
+  kableExtra::row_spec(micusp_neg, bold = T, color = "white", background = "steelblue") %>%
+  kableExtra::row_spec(micusp_orp, background = "#d3d3d3") %>%
+  kableExtra::row_spec(micusp_orn, bold = T, color = "white", background = "#809bbf") %>%
+  kableExtra::remove_column(1)
+
+ fl_2 %>%
+  knitr::kable(digits = 2) %>%
+  kableExtra::kable_styling(full_width = F, position = "right") %>%
+  kableExtra::pack_rows(index = table(fl_2$Factor)) %>%
+  kableExtra::row_spec(bawe_neg, bold = T, color = "white", background = "steelblue") %>%
+  kableExtra::row_spec(bawe_orp, background = "#d3d3d3") %>%
+  kableExtra::row_spec(bawe_orn, bold = T, color = "white", background = "#809bbf") %>%
+  kableExtra::remove_column(1)
+
+```
+
+
+```{r}
+# Carry out regression
+fit1 <- lm(Factor1 ~ group, data = mda_micusp)
+fit2 <- lm(Factor1 ~ group, data = mda_bawe)
+
+# Convert ANOVA results into data.frames allows for easier name manipulation
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+# Putting all into one data.frame/table
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                   cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+```
+
+```{r}
+anova_results %>% knitr::kable("html") %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "MICUSP (Dim 1)" = 6, "BAWE (Dim 1)" = 6))
+```
+
+
+```{r echo=FALSE}
+fit1 <- lm(Factor2 ~ group, data = mda_micusp)
+fit2 <- lm(Factor2 ~ group, data = mda_bawe)
+
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                   cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+
+anova_results %>% knitr::kable("html") %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "MICUSP (Dim 2)" = 6, "BAWE (Dim 2)" = 6))
+```
+
+
+```{r echo=FALSE}
+fit1 <- lm(Factor3 ~ group, data = mda_micusp)
+fit2 <- lm(Factor3 ~ group, data = mda_bawe)
+
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                   cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+
+anova_results %>% knitr::kable("html") %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "MICUSP (Dim 3)" = 6, "BAWE (Dim 3)" = 6))
+```
+
+```{r}
+p1 <- stickplot_dual(mda_micusp, mda_bawe, title_a = "MICUSP", title_b = "BAWE")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p1
+```
+
+```{r eevaluate=FALSE, cho=FALSE}
+ggsave("output/dim_1.png", p1,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+
+```{r}
+p2 <- stickplot_dual(mda_micusp, mda_bawe, n_factor = 2, title_a = "MICUSP", title_b = "BAWE")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p2
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/dim_2.png", p2,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+```{r}
+p3 <- stickplot_dual(mda_micusp, mda_bawe, n_factor = 3, title_a = "MICUSP", title_b = "BAWE")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p3
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/dim_3.png", p2,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+
+
+```{r}
+plot_radar(mda_micusp, mda_bawe, factor_n = 1)
+```
+
+# Compare DocuScope and Biber
+
+## Load & Prepare Data
+
+```{r}
+biber_micusp <- read_csv("data/BIBER_micusp_body.csv", show_col_types = FALSE)
+```
+
+```{r}
+biber_micusp <- biber_micusp %>%
+  mutate(doc_id = str_remove(doc_id, ".txt")) %>%
+  rename(text_id = doc_id) %>%
+  left_join(select(micusp_meta, text_id, paper_discipline)) %>%
+  column_to_rownames("text_id") %>%
+  select(paper_discipline, f_01_past_tense:f_67_neg_analytic) %>%
+  mutate(paper_discipline = as.factor(paper_discipline))
+```
+
+## Execute MDA
+
+```{r}
+mda_biber <- mda_loadings(biber_micusp, n_factors = 3)
+```
+
+## Re-label Factors
+
+```{r}
+colnames(mda_biber) <- c("group", "Factor2", "Factor1", "Factor3")
+colnames(attributes(mda_biber)$group_means) <- c("group", "Factor2", "Factor1", "Factor3")
+colnames(attributes(mda_biber)$loadings) <- c("Factor2", "Factor1", "Factor3")
+```
+
+```{r}
+micusp_fl <- attributes(mda_micusp)$loadings %>% 
+  rownames_to_column("Category") %>%
+  pivot_longer(!Category, names_to = "Factor", values_to = "MICUSP Loading") %>%
+  filter(abs(`MICUSP Loading`) > 0.35) %>%
+  mutate(Category = str_replace_all(Category, "([a-z])([A-Z])", "\\1 \\2")) %>%
+  mutate(Factor = str_replace (Factor, "(\\d)", " \\1")) %>%
+  arrange(Factor, -`MICUSP Loading`)
+
+biber_fl <- attributes(mda_biber)$loadings %>% 
+  rownames_to_column("Category") %>%
+  pivot_longer(!Category, names_to = "Factor", values_to = "BIBER Loading") %>%
+  filter(abs(`BIBER Loading`) > 0.35) %>%
+  mutate(Category = str_remove(Category, "f_\\d+_")) %>%
+  mutate(Category = str_replace_all(Category, "_", " ")) %>%
+  mutate(Category = str_to_title(Category)) %>%
+  mutate(Factor = str_replace (Factor, "(\\d)", " \\1")) %>%
+  arrange(Factor, -`BIBER Loading`)
+
+micusp_neg <- which(micusp_fl$`MICUSP Loading` < 0 & abs(micusp_fl$`MICUSP Loading`) > 0.35)
+biber_neg <- which(biber_fl$`BIBER Loading` < 0 & abs(biber_fl$`BIBER Loading`) > 0.35)
+
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+micusp_fl %>%
+  knitr::kable(digits = 2) %>%
+  kableExtra::kable_styling(full_width = F, position = "float_left") %>%
+  kableExtra::pack_rows(index = table(micusp_fl$Factor))%>%
+  kableExtra::row_spec(micusp_neg, bold = T, color = "white", background = "steelblue")
+
+ biber_fl %>%
+  knitr::kable(digits = 2) %>%
+  kableExtra::kable_styling(full_width = F, position = "right") %>%
+  kableExtra::pack_rows(index = table(biber_fl$Factor)) %>%
+  kableExtra::row_spec(biber_neg, bold = T, color = "white", background = "steelblue")
+
+```
+
+
+## Carry out regression
+
+```{r}
+# Carry out regression
+fit1 <- lm(Factor1 ~ group, data = mda_micusp)
+fit2 <- lm(Factor1 ~ group, data = mda_biber)
+
+# Convert ANOVA results into data.frames allows for easier name manipulation
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+# Putting all into one data.frame/table
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                  cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+```
+
+```{r echo=FALSE}
+anova_results %>% knitr::kable("html") %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "DocuScope (Dim 1)" = 6, "Biber (Dim 1)" = 6))
+```
+
+```{r}
+p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "DocuScope", title_b = "Biber")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p4
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/biber_1.png", p4,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+
+```{r}
+p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "DocuScope", title_b = "Biber")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p5
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/biber_2.png", p5,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+```{r}
+p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "DocuScope", title_b = "Biber")
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE}
+p6
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/biber_3.png", p6,  height = 5, width = 7.5, units = "in", dpi = 300)
+```
+
+
+
+# Bibliography
+
+
