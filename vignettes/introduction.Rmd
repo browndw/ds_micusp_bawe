@@ -1,11 +1,8 @@
 ---
 title: "R Notebook"
 output: 
-  html_document:
-    fig_caption: yes
-    number_sections: true
+  bookdown::html_document2:
     toc: true
-    toc_float: true
 author: "David Brown & Emily DeJeu"
 bibliography: mda_bib.bib
 link-citations: yes
@@ -47,9 +44,11 @@ MDA in conducted in the following stages:
 
 ## Corpora
 
-Our study compares disclinary variation in student writing across two national contexts: American and British. The American data come from the Michigan Corpus of Upper-Level Student Papers (MICUSP), while the British come from the British Academic Written English (BAWE) corpus.
+Our study compares disciplinary variation in student writing across two national contexts: American and British. The American data come from the Michigan Corpus of Upper-Level Student Papers (MICUSP), while the British come from the British Academic Written English (BAWE) corpus.
 
-# Load Packages
+# Comparing MICUSP & BAWE
+
+## Load Packages
 
 MDA is carried out using the **mda.biber** packager. You can access the package and its code here:
 
@@ -60,15 +59,15 @@ library(tidyverse)
 library(mda.biber)
 ```
 
-# Load Utility Functions
+## Load Utility Functions
 
 ```{r}
 source("R/utils.R")
 ```
 
-# Load & Prepare Data
+## Load & Prepare Data
 
-## Load Tables of DocuScope Frequencies
+### Load Tables of DocuScope Frequencies
 
 ```{r message=FALSE}
 ds_micusp <- read_csv("data/CLUSTER_micusp_body.csv", show_col_types = FALSE)
@@ -76,17 +75,17 @@ micusp_meta <- read_csv("data/micusp_meta.csv", show_col_types = FALSE)
 ```
 
 ```{r}
-ds_micusp[1:10, 1:6] %>% knitr::kable(digits = 3)
+ds_micusp[1:10, 1:6] %>% knitr::kable(digits = 3, caption = 'Sample of DocuScope data tables.') %>%  kableExtra::kable_styling()
 ```
 
-## Load Metadata
+### Load Metadata
 
 ```{r message=FALSE}
 ds_bawe <- read_csv("data/CLUSTER_bawe_body.csv", show_col_types = FALSE)
 bawe_meta <- read_csv("data/bawe_meta.csv", show_col_types = FALSE)
 ```
 
-## Check Composition of Corpora
+## Composition of Corpora
 
 ```{r warning=FALSE, message=FALSE}
 micusp_counts <- ds_micusp %>%
@@ -101,7 +100,13 @@ micusp_counts <- ds_micusp %>%
 ```
 
 ```{r echo=FALSE}
- micusp_counts %>% janitor::adorn_totals() %>% knitr::kable("html") %>% kableExtra::row_spec(18, bold = TRUE) %>%
+ micusp_counts %>% 
+  janitor::adorn_totals() %>%
+  knitr::kable("html",
+               col.names = c("", "Tokens", "Texts"),
+               format.args = list(big.mark = ",", scientific = FALSE),
+               caption = 'Composition of MICUSP.') %>% 
+  kableExtra::row_spec(18, bold = TRUE) %>%
   kableExtra::kable_styling()
 ```
 
@@ -118,7 +123,13 @@ bawe_counts <- ds_bawe %>%
 ```
 
 ```{r echo=FALSE}
- bawe_counts %>% janitor::adorn_totals() %>% knitr::kable("html") %>% kableExtra::row_spec(32, bold = TRUE) %>%
+ bawe_counts %>% 
+  janitor::adorn_totals() %>% 
+  knitr::kable("html",
+               col.names = c("", "Tokens", "Texts"),
+               format.args = list(big.mark = ",", scientific = FALSE),
+               caption = 'Composition of BAWE') %>% 
+  kableExtra::row_spec(32, bold = TRUE) %>%
   kableExtra::kable_styling()
 ```
 
@@ -142,9 +153,9 @@ ds_bawe <- ds_bawe %>%
   mutate(discipline = as.factor(discipline))
 ```
 
-# Execute MDA
+## Execute MDA
 
-## MICUSP MDA
+### MICUSP MDA
 
 ```{r}
 mda_micusp <- mda_loadings(ds_micusp, n_factors = 3)
@@ -187,11 +198,9 @@ micusp_neg <- which(fl_1$`MICUSP Loading` < 0 & abs(fl_1$`MICUSP Loading`) > 0.3
 bawe_neg <- which(fl_2$`BAWE Loading` < 0 & abs(fl_2$`BAWE Loading`) > 0.35)
 ```
 
-### Examine Loadings
-
 ```{r echo=FALSE, warning=FALSE}
 fl_1 %>%
-  knitr::kable(digits = 2) %>%
+  knitr::kable(digits = 2, caption = 'Factor loadings for MICUSP.') %>%
   kableExtra::kable_styling(full_width = F, position = "float_left") %>%
   kableExtra::pack_rows(index = table(fl_1$Factor)) %>%
   kableExtra::row_spec(micusp_neg, bold = T, color = "white", background = "steelblue") %>%
@@ -200,7 +209,7 @@ fl_1 %>%
   kableExtra::remove_column(1)
 
  fl_2 %>%
-  knitr::kable(digits = 2) %>%
+  knitr::kable(digits = 2, caption = 'Factor loadings for BAWE.') %>%
   kableExtra::kable_styling(full_width = F, position = "right") %>%
   kableExtra::pack_rows(index = table(fl_2$Factor)) %>%
   kableExtra::row_spec(bawe_neg, bold = T, color = "white", background = "steelblue") %>%
@@ -210,6 +219,47 @@ fl_1 %>%
 
 ```
 
+### Vizualizing Dimensional Composition Using Radar Plots
+
+```{r}
+radar_1 <- plot_radar(mda_micusp, mda_bawe, factor_n = 1)
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Compositions of Dimension 1 for BAWE and MICUSP."}
+radar_1
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/radar_1.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+```
+
+
+```{r}
+radar_2 <- plot_radar(mda_micusp, mda_bawe, factor_n = 2)
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Compositions of Dimension 2 for BAWE and MICUSP."}
+radar_2
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/radar_2.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+```
+
+```{r}
+radar_3 <- plot_radar(mda_micusp, mda_bawe, factor_n = 3)
+```
+
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Compositions of Dimension 3 for BAWE and MICUSP."}
+radar_3
+```
+
+```{r evaluate=FALSE, echo=FALSE}
+ggsave("output/radar_3.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+```
+
+
+### Evaluate Using ANOVA
 
 ```{r}
 # Carry out regression
@@ -230,7 +280,8 @@ anova_results[is.na(anova_results)] <- "--"
 ```
 
 ```{r}
-anova_results %>% knitr::kable("html") %>% 
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 1 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
   kableExtra::add_header_above(c("", "MICUSP (Dim 1)" = 6, "BAWE (Dim 1)" = 6))
 ```
@@ -250,7 +301,8 @@ colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
 row.names(anova_results)[1] <- ""
 anova_results[is.na(anova_results)] <- "--"
 
-anova_results %>% knitr::kable("html") %>% 
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 2 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
   kableExtra::add_header_above(c("", "MICUSP (Dim 2)" = 6, "BAWE (Dim 2)" = 6))
 ```
@@ -270,20 +322,23 @@ colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
 row.names(anova_results)[1] <- ""
 anova_results[is.na(anova_results)] <- "--"
 
-anova_results %>% knitr::kable("html") %>% 
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 3 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
   kableExtra::add_header_above(c("", "MICUSP (Dim 3)" = 6, "BAWE (Dim 3)" = 6))
 ```
+
+### Examine Position of Disciplines along Dimensions
 
 ```{r}
 p1 <- stickplot_dual(mda_micusp, mda_bawe, title_a = "MICUSP", title_b = "BAWE")
 ```
 
-```{r fig.height=5, fig.width=7.5, echo=FALSE}
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 1."}
 p1
 ```
 
-```{r eevaluate=FALSE, cho=FALSE}
+```{r eevaluate=FALSE, echo=FALSE}
 ggsave("output/dim_1.png", p1,  height = 5, width = 7.5, units = "in", dpi = 300)
 ```
 
@@ -312,12 +367,6 @@ p3
 ggsave("output/dim_3.png", p2,  height = 5, width = 7.5, units = "in", dpi = 300)
 ```
 
-
-
-```{r}
-plot_radar(mda_micusp, mda_bawe, factor_n = 1)
-```
-
 # Compare DocuScope and Biber
 
 ## Load & Prepare Data
@@ -342,13 +391,15 @@ biber_micusp <- biber_micusp %>%
 mda_biber <- mda_loadings(biber_micusp, n_factors = 3)
 ```
 
-## Re-label Factors
+### Re-label Factors
 
 ```{r}
 colnames(mda_biber) <- c("group", "Factor2", "Factor1", "Factor3")
 colnames(attributes(mda_biber)$group_means) <- c("group", "Factor2", "Factor1", "Factor3")
 colnames(attributes(mda_biber)$loadings) <- c("Factor2", "Factor1", "Factor3")
 ```
+
+## Examine Factor Loadings
 
 ```{r}
 micusp_fl <- attributes(mda_micusp)$loadings %>% 
@@ -377,21 +428,20 @@ biber_neg <- which(biber_fl$`BIBER Loading` < 0 & abs(biber_fl$`BIBER Loading`) 
 
 ```{r echo=FALSE, warning=FALSE}
 micusp_fl %>%
-  knitr::kable(digits = 2) %>%
+  knitr::kable(digits = 2, caption = 'Factor loadings for DocuScope') %>%
   kableExtra::kable_styling(full_width = F, position = "float_left") %>%
   kableExtra::pack_rows(index = table(micusp_fl$Factor))%>%
   kableExtra::row_spec(micusp_neg, bold = T, color = "white", background = "steelblue")
 
  biber_fl %>%
-  knitr::kable(digits = 2) %>%
+  knitr::kable(digits = 2, caption = 'Factor loadings for Biber') %>%
   kableExtra::kable_styling(full_width = F, position = "right") %>%
   kableExtra::pack_rows(index = table(biber_fl$Factor)) %>%
   kableExtra::row_spec(biber_neg, bold = T, color = "white", background = "steelblue")
 
 ```
 
-
-## Carry out regression
+## Evaluate Using ANOVA
 
 ```{r}
 # Carry out regression
@@ -412,16 +462,61 @@ anova_results[is.na(anova_results)] <- "--"
 ```
 
 ```{r echo=FALSE}
-anova_results %>% knitr::kable("html") %>% 
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 1 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
   kableExtra::add_header_above(c("", "DocuScope (Dim 1)" = 6, "Biber (Dim 1)" = 6))
 ```
+
+
+```{r echo=FALSE}
+fit1 <- lm(Factor2 ~ group, data = mda_micusp)
+fit2 <- lm(Factor2 ~ group, data = mda_biber)
+
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                   cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 2 ANOVAs.') %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "DocuScope (Dim 2)" = 6, "Biber (Dim 2)" = 6))
+```
+
+
+```{r echo=FALSE}
+fit1 <- lm(Factor3 ~ group, data = mda_micusp)
+fit2 <- lm(Factor3 ~ group, data = mda_biber)
+
+f1_aov <- data.frame(anova(fit1), r.squared = c(summary(fit1)$r.squared*100, NA))
+f2_aov <- data.frame(anova(fit2), r.squared = c(summary(fit2)$r.squared*100, NA))
+
+anova_results <- data.frame(rbind(c("DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^", 
+                                    "DF", "Sum Sq", "Mean Sq", "F value", "Pr(>F)", "*R*^2^"), 
+                                   cbind(round(f1_aov, 2), round(f2_aov, 2)))) 
+colnames(anova_results) <- c("", "", "", "", "", "", "", "", "", "", "", "")
+row.names(anova_results)[1] <- ""
+anova_results[is.na(anova_results)] <- "--"
+
+anova_results %>% knitr::kable("html",
+               caption = 'Dimension 3 ANOVAs.') %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kableExtra::add_header_above(c("", "DocuScope (Dim 3)" = 6, "Biber (Dim 3)" = 6))
+```
+
+## Place Disciplines along Dimensions
 
 ```{r}
 p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "DocuScope", title_b = "Biber")
 ```
 
-```{r fig.height=5, fig.width=7.5, echo=FALSE}
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 1."}
 p4
 ```
 
@@ -434,7 +529,7 @@ ggsave("output/biber_1.png", p4,  height = 5, width = 7.5, units = "in", dpi = 3
 p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "DocuScope", title_b = "Biber")
 ```
 
-```{r fig.height=5, fig.width=7.5, echo=FALSE}
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 2."}
 p5
 ```
 
@@ -446,7 +541,7 @@ ggsave("output/biber_2.png", p5,  height = 5, width = 7.5, units = "in", dpi = 3
 p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "DocuScope", title_b = "Biber")
 ```
 
-```{r fig.height=5, fig.width=7.5, echo=FALSE}
+```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 3."}
 p6
 ```
 

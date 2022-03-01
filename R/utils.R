@@ -213,7 +213,7 @@ plot_radar <- function(mda_1, mda_2, factor_n, add_title = FALSE) {
     geom_path(data = gridline$min$path, aes(x = x, y = y), 
               lty = "solid", colour = "gray80", size = .25) +
     geom_path(data = gridline$mid$path, aes(x = x, y = y),
-              lty = "dashed", colour = "#21908CFF", size = .25) +
+              lty = "dashed", colour = "gray40", size = .25) +
     geom_path(data = gridline$max$path, aes(x = x, y = y),
               lty = "solid", colour = "gray80", size = .25) +
     geom_text(data = subset(axis$label, abs(axis$label$x) <= x.centre.range),
@@ -222,17 +222,17 @@ plot_radar <- function(mda_1, mda_2, factor_n, add_title = FALSE) {
               aes(x = x, y = y, label = text), size = 2.5, hjust = 0) +
     geom_path(data = axis$path, aes(x = x, y = y, group = axis.no),
               colour = "gray80", size = .25) +
-    geom_polygon(data = group$path, aes(x = x, y = y, group = group, fill = group),
-                 alpha = .35) +
-    geom_path(data = group$path, aes(x = x, y = y, group = group, color = group),
+    geom_path(data = group$path, aes(x = x, y = y, group = group, color = group, linetype=group),
               size = .25) +
-    geom_point(data = group$path, aes(x = x, y = y, group = group, fill = group), 
-               size = .75, shape = 21, alpha = .5) +
-    viridis::scale_color_viridis(discrete = T, direction = 1) +
-    viridis::scale_fill_viridis(discrete = T, direction = 1) +
+    geom_point(data = group$path, aes(x = x, y = y, group = group, fill = group, shape = group), 
+               size = 2, alpha = .5) +
+    scale_color_manual(values = c("black", "black")) +
+    scale_fill_manual(values = c("white", "gray60")) +
+    scale_linetype_manual(values = c("solid", "dotted")) +
+    scale_shape_manual(values = c(21, 24)) +
     theme_void() +
     theme(legend.title = element_blank(),
-          legend.text = element_text(size =4.5),
+          legend.text = element_text(size =10),
           legend.position="bottom")
   
   if(add_title == T) {radar <- radar + ggtitle(paste0("Dimension ", factor_n)) +
