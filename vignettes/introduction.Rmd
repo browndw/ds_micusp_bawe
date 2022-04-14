@@ -230,7 +230,7 @@ radar_1
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_1.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_1.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 
@@ -243,7 +243,7 @@ radar_2
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_2.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_2.png", radar_2,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 ```{r}
@@ -255,7 +255,7 @@ radar_3
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_3.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_3.png", radar_3,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 
