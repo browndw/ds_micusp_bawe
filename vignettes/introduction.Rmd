@@ -434,7 +434,7 @@ micusp_fl %>%
   kableExtra::row_spec(micusp_neg, bold = T, color = "white", background = "steelblue")
 
  biber_fl %>%
-  knitr::kable(digits = 2, caption = 'Factor loadings for Biber') %>%
+  knitr::kable(digits = 2, caption = 'Factor loadings for linguistic tagger') %>%
   kableExtra::kable_styling(full_width = F, position = "right") %>%
   kableExtra::pack_rows(index = table(biber_fl$Factor)) %>%
   kableExtra::row_spec(biber_neg, bold = T, color = "white", background = "steelblue")
@@ -465,7 +465,7 @@ anova_results[is.na(anova_results)] <- "--"
 anova_results %>% knitr::kable("html",
                caption = 'Dimension 1 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
-  kableExtra::add_header_above(c("", "DocuScope (Dim 1)" = 6, "Biber (Dim 1)" = 6))
+  kableExtra::add_header_above(c("", "DocuScope (Dim 1)" = 6, "Linguistic (Dim 1)" = 6))
 ```
 
 
@@ -486,7 +486,7 @@ anova_results[is.na(anova_results)] <- "--"
 anova_results %>% knitr::kable("html",
                caption = 'Dimension 2 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
-  kableExtra::add_header_above(c("", "DocuScope (Dim 2)" = 6, "Biber (Dim 2)" = 6))
+  kableExtra::add_header_above(c("", "DocuScope (Dim 2)" = 6, "Linguistic (Dim 2)" = 6))
 ```
 
 
@@ -507,13 +507,13 @@ anova_results[is.na(anova_results)] <- "--"
 anova_results %>% knitr::kable("html",
                caption = 'Dimension 3 ANOVAs.') %>% 
   kableExtra::kable_styling(bootstrap_options = "striped", full_width = T) %>%
-  kableExtra::add_header_above(c("", "DocuScope (Dim 3)" = 6, "Biber (Dim 3)" = 6))
+  kableExtra::add_header_above(c("", "DocuScope (Dim 3)" = 6, "Linguistic (Dim 3)" = 6))
 ```
 
 ## Place Disciplines along Dimensions
 
 ```{r}
-p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "DocuScope", title_b = "Biber")
+p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 1."}
@@ -526,7 +526,7 @@ ggsave("output/biber_1.png", p4,  height = 5, width = 7.5, units = "in", dpi = 3
 
 
 ```{r}
-p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "DocuScope", title_b = "Biber")
+p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 2."}
@@ -538,7 +538,7 @@ ggsave("output/biber_2.png", p5,  height = 5, width = 7.5, units = "in", dpi = 3
 ```
 
 ```{r}
-p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "DocuScope", title_b = "Biber")
+p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 3."}
