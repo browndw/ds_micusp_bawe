@@ -230,7 +230,7 @@ radar_1
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_1.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_1.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 
@@ -243,7 +243,7 @@ radar_2
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_2.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_2.png", radar_2,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 ```{r}
@@ -255,7 +255,7 @@ radar_3
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/radar_3.png", radar_1,  height = 5, width = 5, units = "in", dpi = 300)
+ggsave("output/radar_3.png", radar_3,  height = 5, width = 5, units = "in", dpi = 300, bg = "white")
 ```
 
 
@@ -364,7 +364,7 @@ p3
 ```
 
 ```{r evaluate=FALSE, echo=FALSE}
-ggsave("output/dim_3.png", p2,  height = 5, width = 7.5, units = "in", dpi = 300)
+ggsave("output/dim_3.png", p3,  height = 5, width = 7.5, units = "in", dpi = 300)
 ```
 
 # Compare DocuScope and Biber
@@ -513,7 +513,7 @@ anova_results %>% knitr::kable("html",
 ## Place Disciplines along Dimensions
 
 ```{r}
-p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "DocuScope", title_b = "Biber")
+p4 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 1, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 1."}
@@ -526,7 +526,7 @@ ggsave("output/biber_1.png", p4,  height = 5, width = 7.5, units = "in", dpi = 3
 
 
 ```{r}
-p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "DocuScope", title_b = "Biber")
+p5 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 2, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 2."}
@@ -538,7 +538,7 @@ ggsave("output/biber_2.png", p5,  height = 5, width = 7.5, units = "in", dpi = 3
 ```
 
 ```{r}
-p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "DocuScope", title_b = "Biber")
+p6 <- stickplot_dual(mda_micusp, mda_biber, n_factor = 3, title_a = "Rhetorical", title_b = "Linguistic")
 ```
 
 ```{r fig.height=5, fig.width=7.5, echo=FALSE, fig.cap="Position of disciplines along Dimension 3."}
